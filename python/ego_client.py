@@ -96,7 +96,7 @@ class EgoClient(object):
 
         if result['count'] == 0:
             self.ego_user_not_found(user)
-            raise IOError(f"No matches for {user} from ego endpoint {query}",
+            raise LookupError(f"No matches for {user} from ego endpoint {query}",
                           result)
 
         # Return only exact matches from the field search
