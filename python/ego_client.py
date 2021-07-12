@@ -1,5 +1,6 @@
 import json
 import logging
+import urllib.parse
 from oauthlib.oauth2 import TokenExpiredError
 
 DEFAULT_PROVIDER = "GOOGLE"
@@ -91,6 +92,7 @@ class EgoClient(object):
 
     def _user_id(self, user):
         filter_field = "email"
+        encoded_user = urllib.parse.quote(user)
         query = f"/users?{filter_field}={user}&providerType={DEFAULT_PROVIDER}"
         result = self._get_json(query)
 
