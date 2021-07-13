@@ -93,7 +93,7 @@ class EgoClient(object):
     def _user_id(self, user):
         filter_field = "email"
         encoded_user = urllib.parse.quote(user)
-        query = f"/users?{filter_field}={user}&providerType={DEFAULT_PROVIDER}"
+        query = f"/users?{filter_field}={encoded_user}&providerType={DEFAULT_PROVIDER}"
         result = self._get_json(query)
 
         if result['count'] == 0:
