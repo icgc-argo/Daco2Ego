@@ -44,7 +44,7 @@ def report_warnings(c):
     fields = ("multiple_entries", "invalid", "invalid_email", "revoke_invalid", "ego_user_not_found")
     counts = zero_defaults(fields, c)
 
-    if not (counts['multiple_entries'] or counts['invalid'] or counts['invalid_email'] or counts['ego_user_notfound']):
+    if not (counts['multiple_entries'] or counts['invalid'] or counts['invalid_email'] or counts['ego_user_not_found']):
         return ""
 
     report = "\n*Warnings*:\n"
