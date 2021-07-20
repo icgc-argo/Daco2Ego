@@ -34,9 +34,11 @@ spec:
   - name: docker
     image: docker:18-git
     tty: true
-    volumeMounts:
-    - mountPath: /var/run/docker.sock
-      name: docker-sock
+    env:
+      - name: DOCKER_HOST
+        value: tcp://localhost:2375
+      - name: HOME
+        value: /home/jenkins/agent
   - name: dind-daemon
     image: docker:18.06-dind
     securityContext:
