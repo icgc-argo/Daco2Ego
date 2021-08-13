@@ -57,8 +57,8 @@ spec:
                     withCredentials([usernamePassword(credentialsId:'argoContainers', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh 'docker login ghcr.io -u $USERNAME -p $PASSWORD'
                     }
-                    sh "docker build --network=host . -t ${gitHubRegistry}/${gitHubRepo}/${serviceName}:${commit}"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}/${serviceName}:${commit}"
+                    sh "docker build --network=host . -t ${dockerRegistry}/${gitHubRepo}/${serviceName}:${commit}"
+                    sh "docker push ${dockerRegistry}/${gitHubRepo}/${serviceName}:${commit}"
                 }
             }
         }
@@ -78,8 +78,8 @@ spec:
                         sh 'docker login ghcr.io -u $USERNAME -p $PASSWORD'
                     }
 
-                    sh "docker build --network=host . -t ${gitHubRegistry}/${gitHubRepo}/${serviceName}:edge"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}/${serviceName}:edge"
+                    sh "docker build --network=host . -t ${dockerRegistry}/${gitHubRepo}/${serviceName}:edge"
+                    sh "docker push ${dockerRegistry}/${gitHubRepo}/${serviceName}:edge"
 
                }
                 build(job: "/ARGO/provision/daco2ego", parameters: [
@@ -104,8 +104,8 @@ spec:
                         sh 'docker login ghcr.io -u $USERNAME -p $PASSWORD'
                     }
 
-                    sh "docker build --network=host . -t ${gitHubRegistry}/${gitHubRepo}/${serviceName}:latest"
-                    sh "docker push ${gitHubRegistry}/${gitHubRepo}/${serviceName}:latest"
+                    sh "docker build --network=host . -t ${dockerRegistry}/${gitHubRepo}/${serviceName}:latest"
+                    sh "docker push ${dockerRegistry}/${gitHubRepo}/${serviceName}:latest"
 
                     withCredentials([usernamePassword(credentialsId: 'argoGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                         sh "git tag ${commit}"
