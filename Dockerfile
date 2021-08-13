@@ -1,7 +1,7 @@
 FROM alpine 
 WORKDIR /daco2ego
 RUN apk add --no-cache python3 
-RUN apk add --no-cache pip3
+RUN apk add --no-cache py-pip
 RUN apk add --no-cache bash 
 RUN apk add --no-cache build-base 
 ADD python/*.py ./requirements.txt ./ 
