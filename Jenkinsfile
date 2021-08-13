@@ -1,4 +1,8 @@
 def commit = "UNKNOWN" 
+def serviceName = "daco2ego"
+def dockerHubRepo = "icgcargo"
+def gitHubRepo = "icgc-argo"
+def dockerRegistry = "ghcr.io"
 pipeline {
     agent {
         kubernetes {
@@ -39,17 +43,20 @@ spec:
         stage('Build') {
             steps {
                 container('docker') {
-                    withCredentials([usernamePassword(credentialsId:'argoDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        sh 'docker login -u $USERNAME -p $PASSWORD'
-                    }
                     script {
                         commit = sh(returnStdout: true, script: 'git describe --always').trim()
                     }
+                    withCredentials([usernamePassword(credentialsId:'argoDockerHub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh "docker login -u $USERNAME -p $PASSWORD"
+                    }
+                    sh "docker build --network=host . -t ${dockerHubRepo}/${serviceName}:${commit}"
+                    sh "docker push ${dockerHubRepo}/${serviceName}:${commit}"
 
-                    // DNS error if --network is default
-                    sh "docker build --network=host . -t icgcargo/daco2ego:${commit}"
-
-                    sh "docker push icgcargo/daco2ego:${commit}"
+                    withCredentials([usernamePassword(credentialsId:'argoContainers', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh 'docker login ghcr.io -u $USERNAME -p $PASSWORD'
+                    }
+                    sh "docker build --network=host . -t ${gitHubRegistry}/${gitHubRepo}/${serviceName}:${commit}"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}/${serviceName}:${commit}"
                 }
             }
         }
@@ -62,10 +69,16 @@ spec:
                         sh 'docker login -u $USERNAME -p $PASSWORD'
                     }
 
-                    // the network=host needed to download dependencies using the host network (since we are inside 'docker'
-                    // container)
-                    sh "docker build --network=host -f Dockerfile . -t icgcargo/daco2ego:edge"
-                    sh "docker push icgcargo/daco2ego:edge"
+                    sh "docker build --network=host -f Dockerfile . -t ${dockerHubRepo}/${serviceName}:edge"
+                    sh "docker push ${dockerHubRepo}/${serviceName}:edge"
+
+                    withCredentials([usernamePassword(credentialsId:'argoContainers', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh 'docker login ghcr.io -u $USERNAME -p $PASSWORD'
+                    }
+
+                    sh "docker build --network=host . -t ${gitHubRegistry}/${gitHubRepo}/${serviceName}:edge"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}/${serviceName}:edge"
+
                }
                 build(job: "/ARGO/provision/daco2ego", parameters: [
                      [$class: 'StringParameterValue', name: 'AP_ARGO_ENV', value: 'dev' ],
@@ -82,10 +95,16 @@ spec:
                         sh 'docker login -u $USERNAME -p $PASSWORD'
                     }
 
-                    // the network=host needed to download dependencies using the host network (since we are inside 'docker'
-                    // container)
-                    sh "docker build --network=host -f Dockerfile . -t icgcargo/daco2ego:latest"
-                    sh "docker push icgcargo/daco2ego:latest"
+                    sh "docker build --network=host -f Dockerfile . -t ${dockerHubRepo}/${serviceName}:latest"
+                    sh "docker push ${dockerHubRepo}/${serviceName}:latest"
+
+                    withCredentials([usernamePassword(credentialsId:'argoContainers', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh 'docker login ghcr.io -u $USERNAME -p $PASSWORD'
+                    }
+
+                    sh "docker build --network=host . -t ${gitHubRegistry}/${gitHubRepo}/${serviceName}:latest"
+                    sh "docker push ${gitHubRegistry}/${gitHubRepo}/${serviceName}:latest"
+
                     withCredentials([usernamePassword(credentialsId: 'argoGithub', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                         sh "git tag ${commit}"
                         sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/icgc-argo/daco2ego --tags"
