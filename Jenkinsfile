@@ -119,8 +119,4 @@ spec:
 
     }
 
-    post {
-        always 
-    }
- 
 }
