@@ -52,10 +52,6 @@ spec:
   volumes:
   - name: docker-graph-storage
     emptyDir: {}
-  - name: docker-sock
-    hostPath:
-      path: /var/run/docker.sock
-      type: File
 """
     }
   }
