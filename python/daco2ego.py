@@ -16,7 +16,7 @@ from ego_client import EgoClient
 from format_errors import err_msg
 from report import create as create_report
 from slack import Reporter as SlackReporter
-
+from collections import OrderedDict
 
 def read_config(name="config/default.conf"):
     with open(name) as f:
@@ -34,8 +34,6 @@ def csv_to_dict(data, encoding_override=None):
 
     ret_list = []
     for u in csv_reader:
-        print(u)
-
         try:
             openid = u['openid'].lower()
         except:
@@ -47,6 +45,18 @@ def csv_to_dict(data, encoding_override=None):
             user_name = u['USER NAME']
 
         ret_list.append((openid, user_name))
+
+    return ret_list
+
+
+def daco2_csv_to_dict(data):
+    ret_list = []
+    reader = csv.DictReader(data.splitlines())
+    for user in reader:
+        openid = user['OPENID'].lower()
+        user_name = user['USER NAME']
+        # any user on the daco2 list will have daco + cloud access
+        ret_list.append(User(openid,user_name,True,True))
 
     return ret_list
 
@@ -104,21 +114,35 @@ def init(config):
     client_id = config['client']['client_id']
     client_secret = config['client']['client_secret']
     base_url = config['client']['base_url']
+    dac_api_url = config['client']['dac_api_url']
 
     rest_client = get_oauth_authenticated_client(base_url, client_id, client_secret)
 
-    ego_client = EgoClient(base_url, rest_client,  # Want to create a factory for new oauth clients
+    ego_client = EgoClient(base_url, rest_client, dac_api_url,  # Want to create a factory for new oauth clients
                            lambda: get_oauth_authenticated_client(base_url, client_id, client_secret))
 
     encoding_override = config.get('file_encoding_override', None)
 
     daco = csv_to_dict(decrypt_file(config['daco_file'], key, iv, hexdump=hexdump), encoding_override)
     cloud = csv_to_dict(decrypt_file(config['cloud_file'], key, iv, hexdump=hexdump), encoding_override)
-    users = get_users(daco, cloud)
+    usersFromDacApi = ego_client.download_daco2_approved_users()
+
+    daco1_users = get_users(daco, cloud)
+    daco2_users = daco2_csv_to_dict(usersFromDacApi)
+
+    # concatenate daco1 users from csv and daco2 users from dac-api endpoint
+    users = daco1_users + daco2_users
+
+    # sort users by has_cloud key as daco2 users will always have has_cloud=True but daco1 users can have False
+    # if a duplicate user does not have cloud access in daco1 but does have it in daco2, we want to use the daco2 access
+    sorted_users = sorted(users, key=lambda k: k.has_cloud, reverse=False)
+
+    # create a temporary ordered dict on email key to filter out duplicates
+    deduplicated_users = list(OrderedDict((v.email, v) for v in sorted_users).values())
 
     daco_group = config['client']['daco_group']
     cloud_group = config['client']['cloud_group']
-    daco_client = DacoClient(daco_group, cloud_group, users, ego_client)
+    daco_client = DacoClient(daco_group, cloud_group, deduplicated_users, ego_client)
 
     logging.info('Daco Client Initialized.');
     return daco_client

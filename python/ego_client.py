@@ -28,8 +28,9 @@ def retry_oauth(func):
     return func_wrapper
 
 class EgoClient(object):
-    def __init__(self, base_url, rest_client, rest_client_factory=None):
+    def __init__(self, base_url, rest_client, dac_api_url, rest_client_factory=None):
         self.base_url = base_url
+        self.dac_api_url = dac_api_url
 
         self._rest_client_factory = rest_client_factory  # Function to produce new rest client if needed to re-auth
         self._rest_client = rest_client
@@ -76,6 +77,13 @@ class EgoClient(object):
             raise LookupError(f"Can't find {value} in results from endpoint "
                               f"{query}", result)
         return matches
+
+    @retry_oauth
+    def download_daco2_approved_users(self):
+        r = self._rest_client.get(self.dac_api_url + "/export/approved-users/?format=daco-file-format")
+        if r.ok:
+            return r.text
+        raise IOError(f"Error trying to GET {r.url}", r)
 
     # Public api
     def _group_id(self, group):
