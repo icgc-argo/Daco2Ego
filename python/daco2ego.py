@@ -50,15 +50,15 @@ def csv_to_dict(data, encoding_override=None):
 
 
 def daco2_csv_to_dict(data):
-    ret_list = []
+    ret_dict = {}
     reader = csv.DictReader(data.splitlines())
+
     for user in reader:
         openid = user['OPENID'].lower()
         user_name = user['USER NAME']
-        # any user on the daco2 list will have daco + cloud access
-        ret_list.append(User(openid,user_name,True,True))
+        ret_dict[openid] = User(openid,user_name,True,True)
 
-    return ret_list
+    return ret_dict
 
 
 def users_with_access_to(data):
@@ -130,19 +130,16 @@ def init(config):
     daco1_users = get_users(daco, cloud)
     daco2_users = daco2_csv_to_dict(usersFromDacApi)
 
-    # concatenate daco1 users from csv and daco2 users from dac-api endpoint
-    users = daco1_users + daco2_users
+    combined_users = list(daco2_users.values())
 
-    # sort users by has_cloud key as daco2 users will always have has_cloud=True but daco1 users can have False
-    # if a duplicate user does not have cloud access in daco1 but does have it in daco2, we want to use the daco2 access
-    sorted_users = sorted(users, key=lambda k: k.has_cloud, reverse=False)
-
-    # create a temporary ordered dict on email key to filter out duplicates
-    deduplicated_users = list(OrderedDict((v.email, v) for v in sorted_users).values())
+    for user in daco1_users:
+        key = user.email
+        if (key not in daco2_users):
+            combined_users.append(user)
 
     daco_group = config['client']['daco_group']
     cloud_group = config['client']['cloud_group']
-    daco_client = DacoClient(daco_group, cloud_group, deduplicated_users, ego_client)
+    daco_client = DacoClient(daco_group, cloud_group, combined_users, ego_client)
 
     logging.info('Daco Client Initialized.');
     return daco_client
