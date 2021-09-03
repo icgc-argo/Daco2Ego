@@ -16,7 +16,6 @@ from ego_client import EgoClient
 from format_errors import err_msg
 from report import create as create_report
 from slack import Reporter as SlackReporter
-from collections import OrderedDict
 
 def read_config(name="config/default.conf"):
     with open(name) as f:
