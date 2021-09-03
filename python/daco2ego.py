@@ -17,7 +17,6 @@ from format_errors import err_msg
 from report import create as create_report
 from slack import Reporter as SlackReporter
 
-
 def read_config(name="config/default.conf"):
     with open(name) as f:
         conf = json.load(f)
@@ -34,8 +33,6 @@ def csv_to_dict(data, encoding_override=None):
 
     ret_list = []
     for u in csv_reader:
-        print(u)
-
         try:
             openid = u['openid'].lower()
         except:
@@ -49,6 +46,18 @@ def csv_to_dict(data, encoding_override=None):
         ret_list.append((openid, user_name))
 
     return ret_list
+
+
+def daco2_csv_to_dict(data):
+    ret_dict = {}
+    reader = csv.DictReader(data.splitlines())
+
+    for user in reader:
+        openid = user['OPENID'].lower()
+        user_name = user['USER NAME']
+        ret_dict[openid] = User(openid,user_name,True,True)
+
+    return ret_dict
 
 
 def users_with_access_to(data):
@@ -104,21 +113,32 @@ def init(config):
     client_id = config['client']['client_id']
     client_secret = config['client']['client_secret']
     base_url = config['client']['base_url']
+    dac_api_url = config['client']['dac_api_url']
 
     rest_client = get_oauth_authenticated_client(base_url, client_id, client_secret)
 
-    ego_client = EgoClient(base_url, rest_client,  # Want to create a factory for new oauth clients
+    ego_client = EgoClient(base_url, rest_client, dac_api_url,  # Want to create a factory for new oauth clients
                            lambda: get_oauth_authenticated_client(base_url, client_id, client_secret))
 
     encoding_override = config.get('file_encoding_override', None)
 
     daco = csv_to_dict(decrypt_file(config['daco_file'], key, iv, hexdump=hexdump), encoding_override)
     cloud = csv_to_dict(decrypt_file(config['cloud_file'], key, iv, hexdump=hexdump), encoding_override)
-    users = get_users(daco, cloud)
+    usersFromDacApi = ego_client.download_daco2_approved_users()
+
+    daco1_users = get_users(daco, cloud)
+    daco2_users = daco2_csv_to_dict(usersFromDacApi)
+
+    combined_users = list(daco2_users.values())
+
+    for user in daco1_users:
+        key = user.email
+        if (key not in daco2_users):
+            combined_users.append(user)
 
     daco_group = config['client']['daco_group']
     cloud_group = config['client']['cloud_group']
-    daco_client = DacoClient(daco_group, cloud_group, users, ego_client)
+    daco_client = DacoClient(daco_group, cloud_group, combined_users, ego_client)
 
     logging.info('Daco Client Initialized.');
     return daco_client
