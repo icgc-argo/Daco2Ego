@@ -21,6 +21,7 @@ class DacoClient(object):
         self._counts = {}
 
     def update_ego(self):
+        # TODO: create wiki for Ego 4 scenarios
         """ Handle scenarios 1-4 wiki specification at
             https://wiki.oicr.on.ca/display/DCCSOFT/DACO2EGO
 
