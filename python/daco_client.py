@@ -21,12 +21,7 @@ class DacoClient(object):
         self._counts = {}
 
     def update_ego(self):
-        # TODO: create wiki for Ego 4 scenarios
-        """ Handle scenarios 1-4 wiki specification at
-            https://wiki.oicr.on.ca/display/DCCSOFT/DACO2EGO
-
-            Scenario 6 (error handling) is also handled implicitly by all
-            calls to our ego client, which traps and logs all exceptions.
+        """ Handles documented scenarios
 
             returns: A list of issues encountered
         """
@@ -108,7 +103,7 @@ class DacoClient(object):
         return f"User is not in ego, no access granted to '{user}'"
 
 
-    # scenario 2
+    # scenario 1
     def existing_user(self, user):
         granted_daco, granted_cloud = False, False
 
@@ -137,7 +132,7 @@ class DacoClient(object):
         u1 = self.get_user(user.email)
         return u1 == user
 
-    # scenarios 3 and 4
+    # scenario 3
     def revoke_access_if_necessary(self, user):
         if user.is_invalid():
             self.revoke_daco(user)

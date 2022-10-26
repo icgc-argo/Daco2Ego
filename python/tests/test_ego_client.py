@@ -26,9 +26,10 @@ def init():
     client_id = config['client']['client_id']
     client_secret = config['client']['client_secret']
     base_url = config['client']['base_url']
+    dac_api_url = config['client']['dac_api_url']
 
     rest_client = get_oauth_authenticated_client(base_url, client_id, client_secret)
-    ego_client = EgoClient(base_url, rest_client)
+    ego_client = EgoClient(base_url, rest_client, dac_api_url)
 
     return ego_client
 
