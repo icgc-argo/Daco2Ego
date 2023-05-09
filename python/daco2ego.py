@@ -23,7 +23,7 @@ def read_config(name="config/default.conf"):
     return conf
 
 
-def daco2_csv_to_list(data):
+def daco_users_csv_to_list(data):
     ret_list = []
     reader = csv.DictReader(data.splitlines())
 
@@ -91,21 +91,20 @@ def init(config):
     ego_client = EgoClient(base_url, rest_client, dac_api_url,  # Want to create a factory for new oauth clients
                            lambda: get_oauth_authenticated_client(base_url, client_id, client_secret))
 
-    usersFromDacApi = ego_client.download_daco2_approved_users()
+    approved_users = ego_client.download_approved_users()
 
-    daco2_users = daco2_csv_to_list(usersFromDacApi)
+    approved_users_list = daco_users_csv_to_list(approved_users)
 
     daco_group = config['client']['daco_group']
     cloud_group = config['client']['cloud_group']
-    daco_client = DacoClient(daco_group, cloud_group, daco2_users, ego_client)
+    daco_client = DacoClient(daco_group, cloud_group, approved_users_list, ego_client)
 
     logging.info('Daco Client Initialized.');
     return daco_client
 
 
-def scream(msg, e):
+def logError(msg, e):
     print(f"*** Failed to send report: {err_msg(msg, e)} ***")
-    print(f"Sending a more reliable report somewhere else???")
 
 
 def main(_program_name, *args):
@@ -117,10 +116,10 @@ def main(_program_name, *args):
         else:
             config = read_config()
     except FileNotFoundError as f:
-        scream(f"Can't read configuration file '{f.filename}'", f)
+        logError(f"Can't read configuration file '{f.filename}'", f)
         exit(2)  # ENOENT (No such file or directory)
     except Exception as e:
-        scream("Can't get configuration for daco2ego!", e)
+        logError("Can't get configuration for daco2ego!", e)
         exit(2)
 
     logging.info('Configuration Loaded.')
@@ -128,7 +127,7 @@ def main(_program_name, *args):
     try:
         slack_client = SlackReporter(config['slack']['url'])
     except Exception as e:
-        scream("Can't get slack client to report errors!", e)
+        logError("Can't get slack client to report errors!", e)
         exit(6)  # ENXIO (No such device or address)
 
     logging.info('Slack webhook configured.')
@@ -162,7 +161,7 @@ def main(_program_name, *args):
         slack_client.send(summary)
 
     except Exception as e:
-        scream("Can't send out report", e)
+        logError("Can't send out report", e)
 
 
 if __name__ == "__main__":
