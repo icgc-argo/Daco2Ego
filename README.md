@@ -26,3 +26,45 @@ import os
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 ```
 Make sure to remove in production!
+
+## Tests
+
+### Test ego client
+
+File: [test_ego_client.py](./python/tests/test_ego_client.py)
+
+Can be run against a local ego instance, if `OAUTHLIB_INSECURE_TRANSPORT` is enabled (see [Development note](#development)).
+Requires a test config file, to be created in `/python/tests/test_ego.conf`. Add in the applicable values:
+
+```
+{
+  "client": {
+    "base_url": "<your_local_ego>",
+    "client_id": "<daco2ego_client_id>",
+    "client_secret": "<daco2ego_client_secret>",
+    "daco_group": "<daco_group_name>",
+    "cloud_group":"<daco_cloud_group_name>"
+  }
+}
+```
+
+### Test daco client
+
+File: [test_daco_client.py](./python/tests/test_daco_client.py)
+
+No test config required
+
+### Test daco2ego
+
+File: [test_daco2ego.py](./python/tests/test_daco2ego.py)
+
+Requires a test config file, to be created in `/python/tests/test.conf`, required:
+```
+  {
+    "client":
+      {
+        "base_url": "https://ego/v1/",
+        "dac_api_url": "https://dac-api/v1"
+      }
+  }
+```
