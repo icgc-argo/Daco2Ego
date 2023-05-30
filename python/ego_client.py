@@ -79,7 +79,7 @@ class EgoClient(object):
         return matches
 
     @retry_oauth
-    def download_daco2_approved_users(self):
+    def download_approved_users(self):
         r = self._rest_client.get(self.dac_api_url + "/export/approved-users/?format=daco-file-format")
         if r.ok:
             return r.text

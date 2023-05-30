@@ -26,18 +26,24 @@ def init():
     client_id = config['client']['client_id']
     client_secret = config['client']['client_secret']
     base_url = config['client']['base_url']
+    dac_api_url = config['client']['dac_api_url']
 
     rest_client = get_oauth_authenticated_client(base_url, client_id, client_secret)
-    ego_client = EgoClient(base_url, rest_client)
+    ego_client = EgoClient(base_url, rest_client, dac_api_url)
 
     return ego_client
 
 
 def test_ego_client():
     client = init()
-    user, name = "test@gmail.com", "Test User"
+    config = read_config()
+    daco_group_name = config['client']['daco_group']
+    cloud_group_name = config['client']['cloud_group']
 
     # users cannot be created manually in Ego 4, so this test needs to be run with an existing user
+    # this user should not be in the daco or cloud group when test is initiated
+    user, name = "test@gmail.com", "Test User"
+
     if not client.user_exists(user):
         assert client.ego_user_not_found(user)
 
@@ -45,20 +51,20 @@ def test_ego_client():
     has_daco(client, user, False)
     has_cloud(client, user, False)
 
-    client.add("daco", [user])
+    client.add(daco_group_name, [user])
     exists(client, user, True)
     has_daco(client, user, True)
     has_cloud(client, user, False)
 
-    client.add("cloud",[user])
+    client.add(cloud_group_name,[user])
     has_daco(client, user, True)
     has_cloud(client, user, True)
 
-    client.remove("cloud",[user])
+    client.remove(cloud_group_name,[user])
     has_daco(client, user, True)
     has_cloud(client, user, False)
 
-    client.remove("daco",[user])
+    client.remove(daco_group_name,[user])
     has_daco(client, user, False)
     has_cloud(client, user, False)
     exists(client, user, True)
@@ -67,7 +73,12 @@ def exists(client, user, status):
     assert client.user_exists(user) == status
 
 def has_daco(client, user, status):
-    assert client.is_member("daco", user) == status
+    config = read_config()
+    daco_group_name = config['client']['daco_group']
+    assert client.is_member(daco_group_name, user) == status
 
 def has_cloud(client, user, status):
-    assert client.is_member("cloud", user) == status
+    config = read_config()
+    cloud_group_name = config['client']['cloud_group']
+
+    assert client.is_member(cloud_group_name, user) == status
